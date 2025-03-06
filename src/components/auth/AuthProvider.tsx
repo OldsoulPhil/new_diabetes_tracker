@@ -9,24 +9,43 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
 
+  const authenticateUser = (
+    email: string,
+    name: string,
+    foodEntries: any[]
+  ) => {
+    setIsAuthenticated(true);
+    setUser({ email, name, foodEntries: foodEntries || [] });
+  };
+
+  const validateCredentials = (storedPassword: string, password: string) => {
+    if (storedPassword !== password) {
+      throw new Error("Invalid credentials. Please try again.");
+    }
+  };
+
+  const getUserData = (email: string) => {
+    const userData = localStorage.getItem(email);
+    if (!userData) {
+      throw new Error("User not found. Please register first.");
+    }
+    return JSON.parse(userData);
+  };
+
+  const updateUserData = (updatedUser: User) => {
+    localStorage.setItem(updatedUser.email, JSON.stringify(updatedUser));
+    setUser(updatedUser);
+  };
+
   const login = async (email: string, password: string) => {
     try {
-      const userData = localStorage.getItem(email);
-      if (userData) {
-        const {
-          name,
-          password: storedPassword,
-          foodEntries,
-        } = JSON.parse(userData);
-        if (storedPassword === password) {
-          setIsAuthenticated(true);
-          setUser({ email, name, foodEntries: foodEntries || [] });
-        } else {
-          throw new Error("Invalid credentials. Please try again.");
-        }
-      } else {
-        throw new Error("User not found. Please register first.");
-      }
+      const {
+        name,
+        password: storedPassword,
+        foodEntries,
+      } = getUserData(email);
+      validateCredentials(storedPassword, password);
+      authenticateUser(email, name, foodEntries);
     } catch (error) {
       console.error("Login failed:", error);
       throw error;
@@ -39,7 +58,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
+    <AuthContext.Provider
+      value={{ isAuthenticated, user, login, logout, updateUserData }}
+    >
       {children}
     </AuthContext.Provider>
   );

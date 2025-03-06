@@ -1,29 +1,35 @@
 import { useState, FormEvent } from "react";
 import { FoodEntry } from "../types/types";
+import { useAuth } from "../hooks/useAuth";
 
-interface FoodEntryItemProps {
-  onAddEntry: (entry: FoodEntry) => void;
-  userId: string;
-}
-
-export const FoodEntryItem = ({ onAddEntry, userId }: FoodEntryItemProps) => {
+export const FoodEntryItem = () => {
+  const { user, updateUserData } = useAuth();
   const [food, setFood] = useState<string>("");
   const [carb, setCarb] = useState<string>("");
   const [typingFood, setTypingFood] = useState<string>("");
   const [typingCarb, setTypingCarb] = useState<string>("");
   const [favorite, setFavorite] = useState<boolean>(false);
 
+  const reset = () => {
+    setFood("");
+    setCarb("");
+    setTypingFood("");
+    setTypingCarb("");
+    setFavorite(false);
+  };
+
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (food && carb) {
-      const newEntry: FoodEntry = { food, carb, userId, favorite };
-      onAddEntry(newEntry);
-      setFood("");
-      setCarb("");
-      setTypingFood("");
-      setTypingCarb("");
-      setFavorite(false);
+    if (!food || !carb || !user) {
+      return;
     }
+    const newEntry: FoodEntry = { food, carb, userId: user.email, favorite };
+
+    const updatedFoodEntries = [...user.foodEntries, newEntry];
+    const updatedUser = { ...user, foodEntries: updatedFoodEntries };
+
+    updateUserData(updatedUser);
+    reset();
   };
 
   return (

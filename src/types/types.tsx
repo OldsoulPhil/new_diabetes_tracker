@@ -33,6 +33,7 @@ export interface AuthContextType {
   user: User | null;
   login: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
+  updateUserData: (updatedUser: User) => void;
 }
 
 export interface GlucoseEntry {

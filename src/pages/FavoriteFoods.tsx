@@ -4,7 +4,7 @@ import { useAuth } from "../hooks/useAuth";
 import { FoodEntry } from "../types/types";
 
 export const FavoriteFood = () => {
-  const { isAuthenticated, logout, user } = useAuth();
+  const { isAuthenticated, logout, user, updateUserData } = useAuth();
   const [entries, setEntries] = useState<FoodEntry[]>([]);
 
   useEffect(() => {
@@ -17,10 +17,10 @@ export const FavoriteFood = () => {
   const handleDeleteFavoriteEntry = (index: number) => {
     if (user) {
       const updatedFoodEntries = user.foodEntries.filter(
-        (entry, i) => !(entry.favorite && i === index)
+        (entry) => !(entry.favorite && entries.indexOf(entry) === index)
       );
       const updatedUser = { ...user, foodEntries: updatedFoodEntries };
-      localStorage.setItem(user.email, JSON.stringify(updatedUser));
+      updateUserData(updatedUser);
       setEntries(updatedFoodEntries.filter((entry) => entry.favorite));
     }
   };
