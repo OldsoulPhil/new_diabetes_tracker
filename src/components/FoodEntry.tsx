@@ -25,7 +25,7 @@ export const FoodEntryItem = () => {
     }
     const newEntry: FoodEntry = { food, carb, userId: user.email, favorite };
 
-    const updatedFoodEntries = [...user.foodEntries, newEntry];
+    const updatedFoodEntries = [...(user.foodEntries || []), newEntry];
     const updatedUser = { ...user, foodEntries: updatedFoodEntries };
 
     updateUserData(updatedUser);

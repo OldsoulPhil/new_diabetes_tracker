@@ -1,24 +1,38 @@
 import { useState, FormEvent } from "react";
 import { GlucoseEntry } from "../types/types";
+import { useAuth } from "../hooks/useAuth";
+import { formatISO } from "date-fns"; // Import formatISO from date-fns
 
 export const DiabetesTracker = () => {
+  const { user, updateUserData } = useAuth(); // Use useAuth
   const [glucose, setGlucose] = useState<string>("");
-  const [entries, setEntries] = useState<GlucoseEntry[]>([]);
   const [typingGlucose, setTypingGlucose] = useState<string>("");
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (glucose) {
-      const newEntry: GlucoseEntry = { glucose };
-      setEntries([...entries, newEntry]);
+    if (glucose && user) {
+      const newEntry: GlucoseEntry = {
+        glucose: Number(glucose), // Convert glucose to number
+        userId: user.email,
+        timestamp: formatISO(new Date()), // Set timestamp using formatISO
+      }; // Add userId
+      const updatedUser = {
+        ...user,
+        glucoseEntries: [...(user.glucoseEntries || []), newEntry],
+      };
+      updateUserData(updatedUser);
+
+      // Save to localStorage
+      const storedUser = JSON.parse(localStorage.getItem(user.email) || "{}");
+      storedUser.glucoseEntries = [
+        ...(storedUser.glucoseEntries || []),
+        newEntry,
+      ];
+      localStorage.setItem(user.email, JSON.stringify(storedUser));
+
       setGlucose("");
       setTypingGlucose("");
     }
-  };
-
-  const handleDelete = (index: number) => {
-    const updatedEntries = entries.filter((_, i) => i !== index);
-    setEntries(updatedEntries);
   };
 
   return (
@@ -47,19 +61,6 @@ export const DiabetesTracker = () => {
         <h3 className="text-xl">
           Entry: {typingGlucose && `${typingGlucose} (mg/dL)`}
         </h3>
-        <ul className="list-disc pl-5">
-          {entries.map((entry, index) => (
-            <li key={index} className="flex justify-between items-center">
-              {entry.glucose} mg/dL
-              <button
-                onClick={() => handleDelete(index)}
-                className="ml-4 bg-red-500 text-white rounded-lg px-2 py-1 hover:bg-red-700 transition duration-200"
-              >
-                Delete
-              </button>
-            </li>
-          ))}
-        </ul>
       </div>
     </div>
   );

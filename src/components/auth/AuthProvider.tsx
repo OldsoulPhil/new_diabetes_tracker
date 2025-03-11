@@ -1,18 +1,18 @@
-import React, { createContext, useState } from "react";
-import { User, AuthContextType } from "../../types/types";
+import React, { createContext, useState, ReactNode } from "react";
+import { User, AuthContextType, FoodEntry } from "../../types/types";
 
 export const AuthContext = createContext<AuthContextType | undefined>(
   undefined
 );
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
 
   const authenticateUser = (
     email: string,
     name: string,
-    foodEntries: any[]
+    foodEntries: FoodEntry[]
   ) => {
     setIsAuthenticated(true);
     setUser({ email, name, foodEntries: foodEntries || [] });
@@ -33,18 +33,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const updateUserData = (updatedUser: User) => {
-    localStorage.setItem(updatedUser.email, JSON.stringify(updatedUser));
+    const storedData = JSON.parse(
+      localStorage.getItem(updatedUser.email) || "{}"
+    );
+    const updatedStorage = {
+      ...storedData,
+      foodEntries: updatedUser.foodEntries,
+    };
+    localStorage.setItem(updatedUser.email, JSON.stringify(updatedStorage));
     setUser(updatedUser);
   };
 
   const login = async (email: string, password: string) => {
     try {
-      const {
-        name,
-        password: storedPassword,
-        foodEntries,
-      } = getUserData(email);
+      const { name, password: storedPassword } = getUserData(email);
       validateCredentials(storedPassword, password);
+      let foodEntries: FoodEntry[] = [];
+      if (localStorage.getItem(email)) {
+        let userData = JSON.parse(localStorage.getItem(email) as string);
+        if (userData.foodEntries) {
+          foodEntries = userData.foodEntries;
+        }
+      }
       authenticateUser(email, name, foodEntries);
     } catch (error) {
       console.error("Login failed:", error);

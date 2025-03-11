@@ -28,7 +28,6 @@ export const Registration = () => {
         JSON.stringify({
           name: data.name,
           password: data.password,
-          foodEntries: [],
         })
       );
       reset();

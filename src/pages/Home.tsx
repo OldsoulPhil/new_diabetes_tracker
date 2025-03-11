@@ -20,7 +20,7 @@ export const Home = () => {
     if (user && authContext) {
       const updatedUser = {
         ...user,
-        foodEntries: [...user.foodEntries, newEntry],
+        foodEntries: [...(user.foodEntries || []), newEntry],
       };
       localStorage.setItem(user.email, JSON.stringify(updatedUser));
       authContext.setUser(updatedUser);

@@ -4,6 +4,8 @@ import { Registration } from "./pages/auth/RegistrationForm";
 import { Login } from "./pages/auth/Login";
 import { Home } from "./pages/Home";
 import { FavoriteFood } from "./pages/FavoriteFoods";
+import { GlucoseEntries } from "./pages/GlucoseEntries"; // Import GlucoseEntries
+import { Comparison } from "./pages/Comparison"; // Import Comparison
 import { AuthProvider } from "./components/auth/AuthProvider";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
@@ -27,6 +29,22 @@ export const App = () => {
             element={
               <ProtectedRoute>
                 <FavoriteFood />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/glucoseentries"
+            element={
+              <ProtectedRoute>
+                <GlucoseEntries />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/comparison"
+            element={
+              <ProtectedRoute>
+                <Comparison />
               </ProtectedRoute>
             }
           />

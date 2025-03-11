@@ -1,0 +1,266 @@
+{
+  "users": [
+    {
+      "email": "john.doe@example.com",
+      "name": "John Doe",
+      "password": "password123",
+      "glucoseEntries": [
+        {
+          "glucose": 120,
+          "timestamp": "2023-10-01T08:00:00Z"
+        },
+        {
+          "glucose": 150,
+          "timestamp": "2023-10-02T08:00:00Z"
+        }
+      ],
+      "foodEntries": [
+        {
+          "food": "Apple",
+          "carb": "25",
+          "timestamp": "2023-10-01T12:00:00Z",
+          "favorite": true,
+          "category": "Fruits",
+          "userId": "john.doe@example.com"
+        },
+        {
+          "food": "Bread",
+          "carb": "30",
+          "timestamp": "2023-10-02T12:00:00Z",
+          "favorite": false,
+          "category": "Grains",
+          "userId": "john.doe@example.com"
+        }
+      ]
+    },
+    {
+      "email": "jane.smith@example.com",
+      "name": "Jane Smith",
+      "password": "password456",
+      "glucoseEntries": [
+        {
+          "glucose": 110,
+          "timestamp": "2023-10-01T08:00:00Z"
+        },
+        {
+          "glucose": 140,
+          "timestamp": "2023-10-02T08:00:00Z"
+        }
+      ],
+      "foodEntries": [
+        {
+          "food": "Banana",
+          "carb": "27",
+          "timestamp": "2023-10-01T12:00:00Z",
+          "favorite": true,
+          "category": "Fruits",
+          "userId": "jane.smith@example.com"
+        },
+        {
+          "food": "Rice",
+          "carb": "35",
+          "timestamp": "2023-10-02T12:00:00Z",
+          "favorite": false,
+          "category": "Grains",
+          "userId": "jane.smith@example.com"
+        }
+      ]
+    },
+    {
+      "email": "example2@cheese.com",
+      "name": "Billie",
+      "password": "4567",
+      "foodEntries": [
+        {
+          "food": "Banana",
+          "carb": "43",
+          "userId": "example2@cheese.com",
+          "favorite": true,
+          "category": "Fruits"
+        },
+        {
+          "food": "Toast",
+          "carb": "54",
+          "userId": "example2@cheese.com",
+          "favorite": true,
+          "category": "Dairy"
+        },
+        {
+          "food": "Pancake",
+          "carb": "45",
+          "userId": "example2@cheese.com",
+          "favorite": true,
+          "category": "Vegetables"
+        }
+      ],
+      "glucoseEntries": [
+        {
+          "glucose": 234,
+          "timestamp": "2025-03-10T20:43:31-04:00"
+        },
+        {
+          "glucose": 632,
+          "timestamp": "2025-03-10T20:43:32-04:00"
+        },
+        {
+          "glucose": 123,
+          "timestamp": "2025-03-10T20:43:34-04:00"
+        },
+        {
+          "glucose": 321,
+          "timestamp": "2025-03-10T20:43:35-04:00"
+        },
+        {
+          "glucose": 152,
+          "timestamp": "2025-03-10T20:43:37-04:00"
+        },
+        {
+          "glucose": 621,
+          "timestamp": "2025-03-10T20:43:39-04:00"
+        },
+        {
+          "glucose": 112,
+          "timestamp": "2025-03-10T20:43:42-04:00"
+        },
+        {
+          "glucose": 22,
+          "timestamp": "2025-03-10T20:43:43-04:00"
+        },
+        {
+          "glucose": 334,
+          "timestamp": "2025-03-10T20:43:44-04:00"
+        },
+        {
+          "glucose": 662,
+          "timestamp": "2025-03-10T20:43:46-04:00"
+        }
+      ]
+    },
+    {
+      "email": "example@cheese.com",
+      "name": "Richard",
+      "password": "1234",
+      "foodEntries": [
+        {
+          "food": "Banana",
+          "carb": "21",
+          "userId": "example@cheese.com",
+          "favorite": true,
+          "category": "Fruits"
+        },
+        {
+          "food": "toast",
+          "carb": "17",
+          "userId": "example@cheese.com",
+          "favorite": true,
+          "category": "Grains"
+        },
+        {
+          "food": "Ham",
+          "carb": "3",
+          "userId": "example@cheese.com",
+          "favorite": false
+        },
+        {
+          "food": "salt",
+          "carb": "0",
+          "userId": "example@cheese.com",
+          "favorite": true,
+          "category": "None"
+        },
+        {
+          "food": "pepper",
+          "carb": "0",
+          "userId": "example@cheese.com",
+          "favorite": true,
+          "category": "None"
+        },
+        {
+          "food": "Frog Legs",
+          "carb": "19",
+          "userId": "example@cheese.com",
+          "favorite": true,
+          "category": "Protein"
+        },
+        {
+          "food": "Chicken Sandwich",
+          "carb": "43",
+          "userId": "example@cheese.com",
+          "favorite": true,
+          "category": "Protein"
+        },
+        {
+          "food": "Hamburger",
+          "carb": "61",
+          "userId": "example@cheese.com",
+          "favorite": true,
+          "category": "Protein"
+        },
+        {
+          "food": "Fanta Orange",
+          "carb": "56",
+          "userId": "example@cheese.com",
+          "favorite": true,
+          "category": "Sugars"
+        },
+        {
+          "food": "Grape Soda",
+          "carb": "66",
+          "userId": "example@cheese.com",
+          "favorite": true,
+          "category": "Sugars"
+        }
+      ],
+      "glucoseEntries": [
+        {
+          "glucose": 55,
+          "timestamp": "2025-03-10T20:39:46-04:00"
+        },
+        {
+          "glucose": 123,
+          "timestamp": "2025-03-10T20:40:08-04:00"
+        },
+        {
+          "glucose": 267,
+          "timestamp": "2025-03-10T20:40:10-04:00"
+        },
+        {
+          "glucose": 367,
+          "timestamp": "2025-03-10T20:40:11-04:00"
+        },
+        {
+          "glucose": 256,
+          "timestamp": "2025-03-10T20:40:13-04:00"
+        },
+        {
+          "glucose": 437,
+          "timestamp": "2025-03-10T20:40:15-04:00"
+        },
+        {
+          "glucose": 600,
+          "timestamp": "2025-03-10T20:40:22-04:00"
+        },
+        {
+          "glucose": 294,
+          "timestamp": "2025-03-10T20:40:31-04:00"
+        },
+        {
+          "glucose": 42,
+          "timestamp": "2025-03-10T20:40:39-04:00"
+        },
+        {
+          "glucose": 453,
+          "timestamp": "2025-03-10T20:40:40-04:00"
+        },
+        {
+          "glucose": 244,
+          "timestamp": "2025-03-10T20:40:43-04:00"
+        },
+        {
+          "glucose": 364,
+          "timestamp": "2025-03-10T20:40:44-04:00"
+        }
+      ]
+    }
+  ]
+}

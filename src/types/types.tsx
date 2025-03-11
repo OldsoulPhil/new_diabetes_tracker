@@ -25,7 +25,8 @@ export type ButtonProps = {
 export interface User {
   email: string;
   name: string;
-  foodEntries: FoodEntry[];
+  foodEntries?: FoodEntry[];
+  glucoseEntries?: GlucoseEntry[];
 }
 
 export interface AuthContextType {
@@ -34,10 +35,15 @@ export interface AuthContextType {
   login: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
   updateUserData: (updatedUser: User) => void;
+  setUser: (user: User) => void;
+  getUserData: (email: string) => User | null;
+  register: (email: string, password: string, name: string) => Promise<void>;
 }
 
 export interface GlucoseEntry {
-  glucose: string;
+  glucose: number;
+  userId: string;
+  timestamp: string;
 }
 
 export interface FoodEntry {
@@ -45,4 +51,11 @@ export interface FoodEntry {
   carb: string;
   userId: string; // add userId to associate entries with users
   favorite?: boolean; // Optional Favorite flag
+  category?: string; // Optional Category
+  timestamp: string;
+}
+
+export interface CategorySelectionBoxProps {
+  onSelectCategory: (category: string) => void;
+  onClose: () => void;
 }
