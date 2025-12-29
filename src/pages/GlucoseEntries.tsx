@@ -1,23 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Sidebar } from "../components/Sidebar";
 import { useAuth } from "../hooks/useAuth";
-import { GlucoseEntry } from "../types/types"; // Import GlucoseEntry type
-import { format } from "date-fns"; // Import format from date-fns
-import GlucoseChart from "../components/GlucoseChart"; // Import GlucoseChart
+import { GlucoseEntry } from "../types/types";
+import { format } from "date-fns";
+import GlucoseChart from "../components/GlucoseChart";
+import { Requests } from "../api";
 
 export const GlucoseEntries = () => {
-  const { isAuthenticated, user, updateUserData } = useAuth();
-  const [entries, setEntries] = useState<GlucoseEntry[]>([]); // Add type for entries
-  const [currentTime, setCurrentTime] = useState(new Date()); // Add state for current time
+  const { user, setUser } = useAuth();
+  const [entries, setEntries] = useState<GlucoseEntry[]>([]);
+  const [currentTime, setCurrentTime] = useState<Date>(new Date());
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    if (user) {
-      const storedUser = JSON.parse(localStorage.getItem(user.email) || "{}");
-      const storedEntries = storedUser.glucoseEntries || [];
-      setEntries(storedEntries);
-    }
-  }, [isAuthenticated, user]);
-
+  // Update current time every second
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -25,69 +20,131 @@ export const GlucoseEntries = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // Fetch glucose entries from API
   useEffect(() => {
-    if (user && user.glucoseEntries) {
+    const fetchEntries = async () => {
+      try {
+        setIsLoading(true);
+        const data = await Requests.getGlucoseEntries();
+        setEntries(data);
+      } catch (error) {
+        console.error("Failed to fetch glucose entries:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchEntries();
+  }, []);
+
+  // Also sync with user state
+  useEffect(() => {
+    if (user?.glucoseEntries) {
       setEntries(user.glucoseEntries);
     }
-  }, [user]);
+  }, [user?.glucoseEntries]);
 
-  const handleDeleteGlucoseEntry = (index: number) => {
-    if (user) {
-      const updatedGlucoseEntries = (user.glucoseEntries || []).filter(
-        (_, i) => i !== index
-      );
-      const updatedUser = { ...user, glucoseEntries: updatedGlucoseEntries };
-      updateUserData(updatedUser);
-      setEntries(updatedGlucoseEntries);
-      const storedUser = JSON.parse(localStorage.getItem(user.email) || "{}");
-      storedUser.glucoseEntries = updatedGlucoseEntries;
-      localStorage.setItem(user.email, JSON.stringify(storedUser));
-    } else {
-      const updatedEntries = entries.filter((_, i) => i !== index);
-      setEntries(updatedEntries);
-      localStorage.setItem("glucoseEntries", JSON.stringify(updatedEntries));
-    }
-  };
+  const handleDeleteGlucoseEntry = useCallback(
+    async (index: number) => {
+      const entryToDelete = entries[index];
+      if (!entryToDelete?.id) return;
+
+      try {
+        // Delete from API
+        await Requests.deleteGlucoseEntry(entryToDelete.id);
+
+        // Update local state
+        const updatedEntries = entries.filter((_, i) => i !== index);
+        setEntries(updatedEntries);
+
+        // Update user context
+        if (user) {
+          setUser({
+            ...user,
+            glucoseEntries: updatedEntries,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to delete glucose entry:", error);
+        alert("Failed to delete glucose entry. Please try again.");
+      }
+    },
+    [entries, user, setUser]
+  );
+
+  const formattedTime = useMemo(() => {
+    return format(currentTime, "PPpp");
+  }, [currentTime]);
 
   return (
-    <div className="flex h-screen">
+    <div className="flex min-h-screen bg-black">
       <Sidebar />
-      {isAuthenticated ? (
-        <div className="flex flex-1 flex-col bg-black text-white items-center text-center justify-start p-4">
-          <div className="flex-1 overflow-auto w-full">
-            <div className="w-full max-w-md mx-auto p-4 border bg-gray-600 text-white rounded-lg shadow-lg mb-4">
-              <h2 className="text-2xl">
-                Current Time: {format(currentTime, "PPpp")}
-              </h2>{" "}
-            </div>
-            <div className="w-full max-w-md mx-auto p-4 border bg-gray-600 text-white rounded-lg shadow-lg">
-              <h2 className="text-2xl">Glucose Entries</h2>{" "}
-              <ul className="list-disc pl-5 overflow-auto max-h-96">
-                {entries.map((entry, index) => (
-                  <li
-                    key={index}
-                    className={`flex justify-between items-center p-2`}
-                  >
-                    {entry.glucose} mg/dL -{" "}
-                    {format(new Date(entry.timestamp), "PPpp")}
-                    <button
-                      onClick={() => handleDeleteGlucoseEntry(index)}
-                      className="ml-4 bg-red-500 text-white rounded-lg px-2 py-1 hover:bg-red-700 transition duration-200"
+      <div className="flex flex-1 flex-col bg-black text-white items-center justify-start p-2 md:p-4 overflow-auto pt-20 md:pt-4 md:ml-60">
+        <div className="w-full max-w-4xl space-y-4">
+          {/* Current Time Display */}
+          <div className="p-3 md:p-4 bg-gray-600 rounded-lg shadow-lg text-center">
+            <h2 className="text-lg md:text-2xl font-semibold">
+              Current Time: {formattedTime}
+            </h2>
+          </div>
+
+          {/* Glucose Entries List */}
+          <div className="p-3 md:p-4 bg-gray-600 rounded-lg shadow-lg">
+            <h2 className="text-xl md:text-2xl font-semibold mb-4">
+              Glucose Entries
+            </h2>
+
+            {isLoading ? (
+              <p className="text-center text-gray-300">Loading...</p>
+            ) : entries.length === 0 ? (
+              <p className="text-center text-gray-300">
+                No glucose entries yet. Add one from the Home page!
+              </p>
+            ) : (
+              <ul className="space-y-2 max-h-96 overflow-auto">
+                {entries
+                  .slice()
+                  .sort(
+                    (a, b) =>
+                      new Date(b.timestamp).getTime() -
+                      new Date(a.timestamp).getTime()
+                  )
+                  .slice(0, 5)
+                  .map((entry, index) => (
+                    <li
+                      key={entry.id || index}
+                      className="flex justify-between items-center p-3 bg-gray-700 rounded hover:bg-gray-600 transition"
                     >
-                      Delete
-                    </button>
-                  </li>
-                ))}
+                      <span>
+                        <span className="font-semibold">
+                          {entry.glucose} mg/dL
+                        </span>
+                        {" - "}
+                        <span className="text-sm text-gray-300">
+                          {format(new Date(entry.timestamp), "PPpp")}
+                        </span>
+                      </span>
+                      <button
+                        onClick={() => handleDeleteGlucoseEntry(index)}
+                        className="bg-red-500 text-white rounded-lg px-3 py-1 hover:bg-red-700 transition duration-200 text-sm"
+                        aria-label="Delete entry"
+                      >
+                        Delete
+                      </button>
+                    </li>
+                  ))}
               </ul>
-            </div>
-            <div className="w-full max-w-4xl mx-auto p-4 border bg-gray-600 text-white rounded-lg shadow-lg mt-4">
+            )}
+          </div>
+
+          {/* Glucose Chart */}
+          {entries.length > 0 && (
+            <div className="p-4 bg-gray-600 rounded-lg shadow-lg">
               <GlucoseChart entries={entries} />
             </div>
-          </div>
+          )}
         </div>
-      ) : (
-        <div className="flex flex-1 flex-col items-center justify-center p-4"></div>
-      )}
+      </div>
     </div>
   );
 };

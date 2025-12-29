@@ -1,0 +1,65 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+
+model User {
+  id             Int           @id @default(autoincrement())
+  email          String        @unique
+  name           String
+  password       String
+  refreshToken   String?       // Store refresh token for JWT authentication
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  glucoseEntries GlucoseEntry[]
+  foodEntries    FoodEntry[]
+  moodEntries    MoodEntry[]
+}
+
+model GlucoseEntry {
+  id        Int      @id @default(autoincrement())
+  glucose   Int
+  timestamp DateTime @default(now())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, timestamp])
+}
+
+model FoodEntry {
+  id         Int      @id @default(autoincrement())
+  food       String
+  carb       Float
+  weight     String?
+  weightUnit String?
+  timestamp  DateTime @default(now())
+  favorite   Boolean  @default(false)
+  category   String?
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, timestamp])
+  @@index([userId, favorite])
+}
+
+model MoodEntry {
+  id             Int      @id @default(autoincrement())
+  mood           String
+  hoursWorkedOut Float    @default(0)
+  notes          String?
+  timestamp      DateTime @default(now())
+  userId         Int
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, timestamp])
+}

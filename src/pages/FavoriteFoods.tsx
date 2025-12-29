@@ -1,148 +1,240 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Sidebar } from "../components/Sidebar";
 import { useAuth } from "../hooks/useAuth";
 import { FoodEntry } from "../types/types";
 import { CategorySelectionBox } from "../components/FoodCategory";
+import { Requests } from "../api";
+import { format } from "date-fns";
+import {
+  filterEntriesByCategory,
+  groupEntriesByCategory,
+} from "../utils/statsCalculators";
 
 export const FavoriteFood = () => {
-  const { isAuthenticated, user, updateUserData } = useAuth();
+  const { user, setUser } = useAuth();
   const [entries, setEntries] = useState<FoodEntry[]>([]);
   const [focusedEntry, setFocusedEntry] = useState<FoodEntry | null>(null);
-  const [showCategoryBox, setShowCategoryBox] = useState(false);
-  const [selectedCategories, setSelectedCategories] = useState<{
-    [key: string]: string;
-  }>({});
+  const [showCategoryBox, setShowCategoryBox] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [selectedCategory, setSelectedCategory] = useState<string>("All");
 
+  // Fetch all food entries
   useEffect(() => {
-    if (isAuthenticated && user) {
-      const favorites = (user.foodEntries || []).filter(
-        (entry) => entry.favorite
-      );
-      setEntries(favorites);
-      const categories = (user.foodEntries || []).reduce((acc, entry) => {
-        if (entry.category && entry.category !== "None") {
-          acc[entry.food] = entry.category;
+    const fetchFoods = async () => {
+      try {
+        setIsLoading(true);
+        const allEntries = await Requests.getFoodEntries();
+        setEntries(allEntries as FoodEntry[]);
+      } catch (error) {
+        console.error("Failed to fetch foods:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchFoods();
+  }, []);
+
+  // Also sync with user state
+  useEffect(() => {
+    if (user?.foodEntries) {
+      setEntries(user.foodEntries);
+    }
+  }, [user?.foodEntries]);
+
+  const handleDeleteFavoriteEntry = useCallback(
+    async (entryId: number) => {
+      try {
+        await Requests.deleteFoodEntry(entryId);
+
+        const updatedEntries = entries.filter((entry) => entry.id !== entryId);
+        setEntries(updatedEntries.map((e) => e as FoodEntry));
+
+        if (user) {
+          const updatedUserEntries =
+            user.foodEntries?.filter((entry) => entry.id !== entryId) || [];
+          setUser({
+            ...user,
+            foodEntries: updatedUserEntries.map((e) => e as FoodEntry),
+          });
         }
-        return acc;
-      }, {} as { [key: string]: string });
-      setSelectedCategories(categories);
-    }
-  }, [isAuthenticated, user]);
+      } catch (error) {
+        console.error("Failed to delete favorite entry:", error);
+      }
+    },
+    [entries, user, setUser]
+  );
 
-  const handleDeleteFavoriteEntry = (index: number) => {
-    if (user) {
-      const updatedFoodEntries = (user.foodEntries || []).filter(
-        (entry) => !(entry.favorite && entries.indexOf(entry) === index)
-      );
-      const updatedUser = { ...user, foodEntries: updatedFoodEntries };
-      updateUserData(updatedUser);
-      setEntries(updatedFoodEntries.filter((entry) => entry.favorite));
-    }
-  };
-
-  const handleFocusEntry = (entry: FoodEntry) => {
+  const handleFocusEntry = useCallback((entry: FoodEntry) => {
     setFocusedEntry(entry);
     setShowCategoryBox(true);
-  };
+  }, []);
 
-  const handleSelectCategory = (category: string) => {
-    if (focusedEntry && user) {
-      const updatedEntry = { ...focusedEntry, category };
-      const updatedEntries = entries.map((entry) =>
-        entry === focusedEntry ? updatedEntry : entry
-      );
-      const updatedUserEntries = (user.foodEntries || []).map((entry) =>
-        entry.food === focusedEntry.food ? updatedEntry : entry
-      );
-      const updatedUser = { ...user, foodEntries: updatedUserEntries };
-      updateUserData(updatedUser);
-      setEntries(updatedEntries);
-      setFocusedEntry(null);
-      setShowCategoryBox(false);
-      setSelectedCategories((prev) => ({
-        ...prev,
-        [focusedEntry.food]: category,
-      }));
-    }
-  };
+  const handleSelectCategory = useCallback(
+    async (category: string) => {
+      if (!focusedEntry?.id) return;
 
-  const handleCloseCategoryBox = () => {
+      try {
+        const updatedEntry = await Requests.updateFoodEntry(focusedEntry.id, {
+          category: category === "None" ? undefined : category,
+        });
+
+        const updatedEntries = entries.map((entry) =>
+          entry.id === focusedEntry.id ? updatedEntry : entry
+        );
+        setEntries(updatedEntries);
+
+        if (user) {
+          const updatedUserEntries =
+            user.foodEntries?.map((entry) =>
+              entry.id === focusedEntry.id ? updatedEntry : entry
+            ) || [];
+          setUser({ ...user, foodEntries: updatedUserEntries });
+        }
+
+        setShowCategoryBox(false);
+        setFocusedEntry(null);
+      } catch (error) {
+        console.error("Failed to update category:", error);
+      }
+    },
+    [focusedEntry, entries, user, setUser]
+  );
+
+  const handleCloseCategoryBox = useCallback(() => {
     setShowCategoryBox(false);
     setFocusedEntry(null);
-  };
+  }, []);
 
-  const groupedEntries = entries.reduce((acc, entry) => {
-    const category = selectedCategories[entry.food] || "Uncategorized";
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(entry);
-    return acc;
-  }, {} as { [key: string]: FoodEntry[] });
+  const categories = [
+    "All",
+    "Fruits",
+    "Grains",
+    "Dairy",
+    "Vegetables",
+    "Protein",
+    "Sugars",
+    "Other",
+  ];
+
+  const filteredEntries = useMemo(() => {
+    return filterEntriesByCategory(entries, selectedCategory);
+  }, [entries, selectedCategory]);
+
+  const groupedEntries = useMemo(() => {
+    return groupEntriesByCategory(filteredEntries);
+  }, [filteredEntries]);
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex min-h-screen bg-black">
       <Sidebar />
-      {isAuthenticated ? (
-        <div className="flex flex-1 flex-col bg-black text-white items-center text-center justify-start p-4">
-          <div className="flex-1 overflow-auto w-full">
-            <div className="w-full max-w-md mx-auto p-4 border bg-gray-600 text-white rounded-lg shadow-lg mt-8 overflow-auto">
-              <h2 className="text-2x1">Favorite Food Entries</h2>
-              <ul className="list-disc pl-5 overflow-auto max-h-96">
-                {entries.map((entry, index) => (
-                  <li
-                    key={index}
-                    className={`flex justify-between items-center p-2 ${
-                      focusedEntry === entry ? "bg-gray-500" : ""
-                    }`}
-                  >
-                    <span onClick={() => handleFocusEntry(entry)}>
-                      {entry.food} - {entry.carb}g carbs
-                      {selectedCategories[entry.food] && (
-                        <span className="ml-2 bg-orange-500 text-white rounded-lg px-2 py-1">
-                          {selectedCategories[entry.food]}
-                        </span>
-                      )}
-                    </span>
-                    <button
-                      onClick={() => handleDeleteFavoriteEntry(index)}
-                      className="ml-4 bg-red-500 text-white rounded-lg px-2 py-1 hover:bg-red-700 transition duration-200"
-                    >
-                      Delete
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="flex flex-wrap justify-center mt-4">
-              {Object.keys(groupedEntries).map((category) => (
-                <div
+      <div className="flex flex-1 flex-col bg-black text-white items-center justify-start p-2 md:p-4 overflow-auto pt-20 md:pt-4 md:ml-60">
+        <div className="w-full max-w-4xl">
+          <div className="p-4 md:p-6 bg-gray-600 rounded-lg shadow-lg">
+            <h2 className="text-2xl md:text-3xl font-bold mb-4 text-center">
+              Food Categories
+            </h2>
+
+            {/* Category Filter Buttons */}
+            <div className="flex flex-wrap gap-2 mb-6 justify-center">
+              {categories.map((category) => (
+                <button
                   key={category}
-                  className="w-full max-w-md mx-2 p-4 border bg-gray-600 text-white rounded-lg shadow-lg mt-4"
+                  onClick={() => setSelectedCategory(category)}
+                  className={`px-3 py-2 md:px-4 md:py-2 rounded-lg font-semibold transition text-sm md:text-base ${
+                    selectedCategory === category
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                  }`}
                 >
-                  <h2 className="text-2x1">{category}</h2>
-                  <ul className="list-disc list-none pl-5">
-                    {groupedEntries[category].map((entry, index) => (
-                      <li key={index} className="p-2">
-                        {entry.food} - {entry.carb}g carbs
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                  {category}
+                </button>
               ))}
             </div>
-            {showCategoryBox && (
-              <CategorySelectionBox
-                onSelectCategory={handleSelectCategory}
-                onClose={handleCloseCategoryBox}
-              />
+
+            {isLoading ? (
+              <p className="text-center text-gray-300">Loading...</p>
+            ) : filteredEntries.length === 0 ? (
+              <p className="text-center text-gray-300">
+                No{" "}
+                {selectedCategory === "All" ? "food entries" : selectedCategory}{" "}
+                found. Add some entries from the Home page!
+              </p>
+            ) : (
+              <div className="space-y-6">
+                {Object.entries(groupedEntries).map(
+                  ([category, categoryEntries]) => (
+                    <div key={category} className="bg-gray-700 p-4 rounded-lg">
+                      <h3 className="text-xl font-semibold mb-3 text-orange-400">
+                        {category}
+                      </h3>
+                      <ul className="space-y-2">
+                        {categoryEntries.map((entry) => (
+                          <li
+                            key={entry.id}
+                            className={`flex flex-col p-3 rounded transition ${
+                              entry.favorite
+                                ? "bg-yellow-900/20 border border-yellow-600"
+                                : focusedEntry?.id === entry.id
+                                ? "bg-gray-600"
+                                : "bg-gray-800 hover:bg-gray-600"
+                            }`}
+                          >
+                            <div className="flex justify-between items-center">
+                              <button
+                                onClick={() => handleFocusEntry(entry)}
+                                className="flex-1 text-left"
+                              >
+                                {entry.favorite && (
+                                  <span className="mr-2 text-yellow-400">
+                                    ⭐
+                                  </span>
+                                )}
+                                <span
+                                  className={`font-medium ${
+                                    entry.favorite ? "text-yellow-200" : ""
+                                  }`}
+                                >
+                                  {entry.food}
+                                </span>
+                                <span className="text-gray-400">
+                                  {" "}
+                                  - {entry.carb}g carbs
+                                </span>
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleDeleteFavoriteEntry(entry.id!)
+                                }
+                                className="ml-4 bg-red-500 text-white rounded-lg px-3 py-1 hover:bg-red-700 transition text-sm"
+                                aria-label="Delete favorite"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                            {entry.timestamp && (
+                              <div className="mt-2 text-xs text-gray-400">
+                                Added:{" "}
+                                {format(new Date(entry.timestamp), "PPpp")}
+                              </div>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )
+                )}
+              </div>
             )}
           </div>
         </div>
-      ) : (
-        <div className="flex flex-1 flex-col items-center justify-center p-4">
-          <h2>You are not logged in.</h2>
-        </div>
+      </div>
+
+      {showCategoryBox && focusedEntry && (
+        <CategorySelectionBox
+          onSelectCategory={handleSelectCategory}
+          onClose={handleCloseCategoryBox}
+        />
       )}
     </div>
   );
